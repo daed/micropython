@@ -31,8 +31,8 @@
 #define LWIP_DHCP_CHECK_LINK_UP         1
 #define DHCP_DOES_ARP_CHECK             0 // to speed DHCP up
 #define LWIP_DNS                        1
-#define LWIP_DNS_SUPPORT_MDNS_QUERIES   1
-#define LWIP_MDNS_RESPONDER             1
+#define LWIP_DNS_SUPPORT_MDNS_QUERIES   0
+#define LWIP_MDNS_RESPONDER             0
 #define LWIP_IGMP                       1
 
 #define LWIP_NUM_NETIF_CLIENT_DATA      LWIP_MDNS_RESPONDER
