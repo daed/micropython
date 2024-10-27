@@ -29,8 +29,13 @@ BUILD ?= build-$(BOARD)
 endif
 
 # Device serial settings.
-PORT ?= /dev/ttyUSB0
-BAUD ?= 460800
+ifneq ($(PORT),)
+PORT_ARG := -p $(PORT)
+endif
+ifneq ($(BAUD),)
+BAUD_ARG := -b $(BAUD)
+endif
+DEVICE += $(PORT_ARG) $(BAUD_ARG)
 
 PYTHON ?= python3
 
@@ -42,7 +47,7 @@ ifdef USER_C_MODULES
 	CMAKE_ARGS += -DUSER_C_MODULES=${USER_C_MODULES}
 endif
 
-IDFPY_FLAGS += -D MICROPY_BOARD=$(BOARD) -D MICROPY_BOARD_DIR=$(abspath $(BOARD_DIR)) $(CMAKE_ARGS)
+IDFPY_FLAGS += -D MICROPY_BOARD=$(BOARD) -D MICROPY_BOARD_DIR="$(abspath $(BOARD_DIR))" $(CMAKE_ARGS)
 
 ifdef FROZEN_MANIFEST
        IDFPY_FLAGS += -D MICROPY_FROZEN_MANIFEST=$(FROZEN_MANIFEST)
@@ -52,10 +57,14 @@ ifdef BOARD_VARIANT
 	IDFPY_FLAGS += -D MICROPY_BOARD_VARIANT=$(BOARD_VARIANT)
 endif
 
+ifdef MICROPY_PREVIEW_VERSION_2
+	IDFPY_FLAGS += -D MICROPY_PREVIEW_VERSION_2=1
+endif
+
 HELP_BUILD_ERROR ?= "See \033[1;31mhttps://github.com/micropython/micropython/wiki/Build-Troubleshooting\033[0m"
 
 define RUN_IDF_PY
-	idf.py $(IDFPY_FLAGS) -B $(BUILD) -p $(PORT) -b $(BAUD) $(1)
+	idf.py $(IDFPY_FLAGS) -B $(BUILD) $(1)
 endef
 
 all:
@@ -74,13 +83,13 @@ clean:
 	$(call RUN_IDF_PY,fullclean)
 
 deploy:
-	$(call RUN_IDF_PY,flash)
+	$(call RUN_IDF_PY,$(DEVICE) flash)
 
 erase:
-	$(call RUN_IDF_PY,erase-flash)
+	$(call RUN_IDF_PY,$(DEVICE) erase-flash)
 
 monitor:
-	$(call RUN_IDF_PY,monitor)
+	$(call RUN_IDF_PY,$(DEVICE) monitor)
 
 size:
 	$(call RUN_IDF_PY,size)

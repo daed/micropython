@@ -390,6 +390,15 @@
 #define MICROPY_HW_MAX_UART (8)
 #define MICROPY_HW_MAX_LPUART (1)
 
+#if defined(MICROPY_HW_ANALOG_SWITCH_PA0) \
+    || defined(MICROPY_HW_ANALOG_SWITCH_PA1) \
+    || defined(MICROPY_HW_ANALOG_SWITCH_PC2) \
+    || defined(MICROPY_HW_ANALOG_SWITCH_PC3)
+#define MICROPY_HW_ENABLE_ANALOG_ONLY_PINS (1)
+#else
+#define MICROPY_HW_ENABLE_ANALOG_ONLY_PINS (0)
+#endif
+
 // Configuration for STM32L0 series
 #elif defined(STM32L0)
 
@@ -591,10 +600,10 @@
 
 // Enable I2S if there are any peripherals defined
 #if defined(MICROPY_HW_I2S1) || defined(MICROPY_HW_I2S2)
-#define MICROPY_HW_ENABLE_I2S (1)
+#define MICROPY_PY_MACHINE_I2S (1)
 #define MICROPY_HW_MAX_I2S (2)
 #else
-#define MICROPY_HW_ENABLE_I2S (0)
+#define MICROPY_PY_MACHINE_I2S (0)
 #define MICROPY_HW_MAX_I2S (0)
 #endif
 
@@ -610,7 +619,7 @@
 // Whether the USB peripheral is device-only, or multiple OTG
 // For STM32G0 and STM32H5 the USB peripheral supports device and host mode,
 // but otherwise acts like a non-multi-OTG peripheral.
-#if defined(STM32G0) || defined(STM32G4) || defined(STM32H5) || defined(STM32L0) || defined(STM32L1) || defined(STM32L432xx) || defined(STM32WB)
+#if defined(STM32G0) || defined(STM32G4) || defined(STM32H5) || defined(STM32L0) || defined(STM32L1) || defined(STM32L432xx) || defined(STM32L452xx) || defined(STM32WB)
 #define MICROPY_HW_USB_IS_MULTI_OTG (0)
 #else
 #define MICROPY_HW_USB_IS_MULTI_OTG (1)
@@ -632,12 +641,12 @@
 
 // D-cache clean/invalidate helpers
 #if __DCACHE_PRESENT == 1
-#define MP_HAL_CLEANINVALIDATE_DCACHE(addr, size) \
-    (SCB_CleanInvalidateDCache_by_Addr((uint32_t *)((uint32_t)addr & ~0x1f), \
-    ((uint32_t)((uint8_t *)addr + size + 0x1f) & ~0x1f) - ((uint32_t)addr & ~0x1f)))
-#define MP_HAL_CLEAN_DCACHE(addr, size) \
-    (SCB_CleanDCache_by_Addr((uint32_t *)((uint32_t)addr & ~0x1f), \
-    ((uint32_t)((uint8_t *)addr + size + 0x1f) & ~0x1f) - ((uint32_t)addr & ~0x1f)))
+// Note: The SCB_Clean<...> functions automatically align their arguments to cover full cache lines.
+// CLEANINVALIDATE will write back (flush) any dirty lines in this region to RAM, then
+// invalidate (evict) the whole region from the cache.
+#define MP_HAL_CLEANINVALIDATE_DCACHE(addr, size) SCB_CleanInvalidateDCache_by_Addr((volatile void *)(addr), (size))
+// CLEAN will write back (flush) any dirty lines in this region to RAM.
+#define MP_HAL_CLEAN_DCACHE(addr, size) SCB_CleanDCache_by_Addr((volatile void *)(addr), (size))
 #else
 #define MP_HAL_CLEANINVALIDATE_DCACHE(addr, size)
 #define MP_HAL_CLEAN_DCACHE(addr, size)
